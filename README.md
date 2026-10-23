@@ -35,6 +35,17 @@ Then restart WoW or type `/reload`.
 
 Durability is only known for players who have this addon or MRT (it uses LibDurability's messages).
 
+## Ready check: one announcer
+
+When a ready check starts, the buff check runs automatically (option) and the results
+(not ready, low durability, Soulwell, buffs) are posted by **one** player only: the starter if they
+have this addon, otherwise the addon user with the highest group rank (leader, then assist, then
+alphabetical). Every copy of the addon works out the same answer, so nothing is posted twice.
+
+MRT has its own "food / flask report on ready check". The option **Keep MRT's ready check report off**
+(on by default) switches it off on your client so buffs are only posted once. Other players' MRT
+can't be changed by an addon - ask them to turn that MRT option off if it is on.
+
 ## Groups board
 
 Open it with right-click on **Sort**, Settings > Groups, or `/srt groups`.

@@ -2,7 +2,7 @@
 ## Title: Spilled Raid Tools
 ## Notes: Markers, ready check (durability, Soulwell), pull & break timers, buff & gear check, guild invite, promote, group sort, tank marks, raid note.
 ## Author: P0dlyanich
-## Version: 1.6.0
+## Version: 1.7.0
 ## SavedVariables: SpilledRaidToolsDB
 ## AddonCompartmentFunc: SpilledRaidTools_OnAddonCompartmentClick
 ## X-License: MIT

@@ -49,6 +49,10 @@ function SRT:InitOptions()
             "Buff check lists players whose food or flask runs out soon (0 = off).", 0, 15, 1, "%d min")
         Check("checkSoulwell", "Soulwell reminder on ready check",
             "On ready check, ask warlocks for a Soulwell (skipped if one was put down in the last 10 min).")
+        Check("autoBuffCheck", "Auto buff check on ready check",
+            "Run the buff check when a ready check starts. Only one player posts it.")
+        Check("blockMRTReport", "Keep MRT's ready check report off",
+            "Turn off MRT's own food / flask chat report on ready check (your client only).")
         local function Rank(v) return ("%d - %s"):format(v, SRT.RankName(v)) end
         Slider("inviteMaxRank", "Invite guild ranks up to", "Invite button: online max-level guild members of these ranks.", 1, 10, 1, Rank)
         Slider("promoteMaxRank", "Promote guild ranks up to", "Promote button: these guild ranks get raid assist.", 1, 10, 1, Rank)

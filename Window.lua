@@ -146,10 +146,18 @@ local function BuildChecks(panel)
     l:Check("checkDurability", "Durability check", "Raid-warn players below the durability limit (players with this addon or MRT).")
     l:Stepper("durabilityMin", "Durability warning below", "Warn about players below this average durability.", 5, 100, 5, "%d%%")
     l:Check("checkSoulwell", "Soulwell reminder", "Ask warlocks for a Soulwell (skipped if one was put down in the last 10 min).")
+    l:Check("autoBuffCheck", "Auto buff check", "Run the buff check when a ready check starts. " ..
+        "Only one player posts it: the starter if they have this addon, otherwise the highest ranked addon user.")
+    l:Check("blockMRTReport", "Keep MRT's ready check report off", "Turns off MRT's own food / flask chat report " ..
+        "on ready check on your client, so the buffs are posted once. Other players' MRT can't be changed.")
     l:Header("Buff & gear check")
     l:Check("checkVantus", "Check vantus runes", "Buff check also lists players without a vantus rune.")
     l:Stepper("expireWarnMinutes", "Warn when food / flask expires within", "0 = off.", 0, 15, 1, "%d min")
     l:Check("buffReportToChat", "Post results to group chat", "Off = only you see the buff / gear check result.")
+end
+
+local function BuildReminders(panel)
+    local l = NewList(panel)
     l:Header("Fight reminders  ({time:2:20} lines in the notes)")
     l:Check("remindersOn", "Show fight reminders", "Show {time:...} lines from the raid note and My reminders on screen during boss fights.")
     l:Stepper("reminderLead", "Show before (countdown)", "Show the reminder this many seconds early with a countdown.", 1, 15, 1, "%d sec")
@@ -646,6 +654,7 @@ local TAB_LIST = {
     { id = "roster",  label = "Roster",   build = BuildRoster  },
     { id = "groups",  label = "Groups",   build = BuildGroups  },
     { id = "note",    label = "Note",     build = BuildNote    },
+    { id = "reminders", label = "Reminders", build = BuildReminders },
 }
 
 local function SelectTab(id)
@@ -678,8 +687,8 @@ local function Build()
     title:SetText("Spilled Raid Tools")
 
     for i, t in ipairs(TAB_LIST) do
-        local b = Button(W, t.label, 100, function() SelectTab(t.id) end)
-        b:SetPoint("TOPLEFT", 14 + (i - 1) * 104, -30)
+        local b = Button(W, t.label, 84, function() SelectTab(t.id) end)
+        b:SetPoint("TOPLEFT", 14 + (i - 1) * 88, -30)
         local panel = CreateFrame("Frame", nil, W)
         panel:SetPoint("TOPLEFT", 18, -62)
         panel:SetPoint("BOTTOMRIGHT", -18, 14)

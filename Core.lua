@@ -16,6 +16,8 @@ SRT.defaults = {
     checkVantus      = true,  -- buff check also lists players without a vantus rune
     expireWarnMinutes = 5,    -- buff check warns when food / flask has less than this left (0 = off)
     checkSoulwell    = true,  -- on ready check, ask warlocks for a Soulwell
+    autoBuffCheck    = true,  -- on ready check, run the buff check automatically
+    blockMRTReport   = true,  -- keep MRT's own "food / flask report on ready check" off
     inviteMaxRank    = 5,     -- Invite button: guild ranks 1..N (1 = Guild Master)
     promoteMaxRank   = 2,     -- Promote button: guild ranks 1..N get raid assist
     autoPromote      = false, -- promote those ranks automatically when they join
@@ -294,6 +296,37 @@ end
 ---------------------------------------------------------------------------
 local rcByMe, rcByButton, rcAnnounced = false, false, false
 local rcStarter            -- short name of whoever started the ready check
+local rcStarterKey         -- same, as "Name" or "Name-Realm"
+local srtUsers = {}        -- [name] = true: players running this addon (they send "DUR:" on ready check)
+
+local function GroupRankOf(unit)
+    local ok, r = pcall(function()
+        if UnitIsGroupLeader(unit) then return 2 end
+        if UnitIsGroupAssistant(unit) then return 1 end
+        return 0
+    end)
+    return ok and r or 0
+end
+
+-- Only ONE player posts ready check results (ready / durability / Soulwell / buffs):
+-- the starter if they have this addon, otherwise the addon user with the highest
+-- group rank (leader > assist > member), ties broken by name. Everyone computes the
+-- same answer from the "DUR:" replies, so nothing is posted twice.
+local function IAmAnnouncer(byMe)
+    if byMe then return true end
+    if not db.announceOthers then return false end
+    if Recent("RC", 40) then return false end                      -- starter pressed our Ready button
+    if rcStarterKey and srtUsers[rcStarterKey] then return false end -- starter has the addon
+    local me = UnitName("player")
+    local best, bestRank
+    for name in pairs(srtUsers) do
+        local r = GroupRankOf(name == me and "player" or name)
+        if not best or r > bestRank or (r == bestRank and name < best) then
+            best, bestRank = name, r
+        end
+    end
+    return best == me
+end
 local rcReady = {}         -- [GUID] = true/false from READY_CHECK_CONFIRM
 
 function SRT:ReadyCheck()
@@ -307,7 +340,7 @@ end
 local function CheckReady(final)
     if rcAnnounced or not db.announceReady then return end
     -- announce if I started it, or if someone without this addon started it
-    local shouldAnnounce = rcByMe or (db.announceOthers and not Recent("RC", 40))
+    local shouldAnnounce = IAmAnnouncer(rcByMe)
     Debug("check final=", final, "byMe=", rcByMe, "announce=", shouldAnnounce)
     if not shouldAnnounce then return end
 
@@ -372,8 +405,7 @@ end
 
 local function CheckDurability(byMe)
     if not db.checkDurability then return end
-    -- same rule as the ready check result: only one player announces it
-    if not (byMe or (db.announceOthers and not Recent("RC", 40))) then return end
+    if not IAmAnnouncer(byMe) then return end -- only one player announces it
 
     local low, unknown = {}, {}
     for _, unit in ipairs(GroupUnits()) do
@@ -428,9 +460,9 @@ local function OnSpellcast(unit, spellID)
     end
 end
 
-local function CheckSoulwell()
+local function CheckSoulwell(byMe)
     if not db.checkSoulwell then return end
-    if not (rcByMe or (db.announceOthers and not Recent("RC", 40))) then return end
+    if not IAmAnnouncer(byMe) then return end
     if GetTime() - lastSoulwell < SOULWELL_RECENT then return end
 
     local locks = {}
@@ -442,6 +474,31 @@ local function CheckSoulwell()
     end
     if #locks > 0 then
         Announce(("Healthstones! %s - please put down a Soulwell."):format(table.concat(locks, ", ", 1, math.min(#locks, 3))))
+    end
+end
+
+---------------------------------------------------------------------------
+-- MRT posts its own food / flask report on ready check. With "blockMRTReport"
+-- we keep that MRT option off on this client, so only our buff check is posted.
+-- (We can't change other players' MRT - they have to turn it off themselves.)
+---------------------------------------------------------------------------
+local function SilenceMRT()
+    if not db or not db.blockMRTReport then return end
+    local rc = type(VMRT) == "table" and VMRT.RaidCheck
+    if type(rc) == "table" and rc.ReadyCheck then
+        rc.ReadyCheck = nil
+        Print("Turned off MRT's ready check food/flask report - Spilled Raid Tools posts the buff check " ..
+            "(change in Settings > Checks).")
+    end
+end
+
+-- Runs a moment after the ready check starts, once the "DUR:" replies are in
+local function AfterReadyCheckStart(byMe)
+    local ok, err = pcall(CheckSoulwell, byMe)
+    if not ok then Print("Soulwell check error: " .. tostring(err)) end
+    if db.autoBuffCheck and not InCombatLockdown() and IAmAnnouncer(byMe) then
+        ok, err = pcall(SRT.BuffCheck, SRT)
+        if not ok then Print("Buff check error: " .. tostring(err)) end
     end
 end
 
@@ -690,19 +747,28 @@ ev:SetScript("OnEvent", function(_, event, ...)
         if SRT.InitNote then SRT:InitNote() end
         if SRT.InitReminders then SRT:InitReminders() end
         if SRT.InitMinimap then SRT:InitMinimap() end
+        SilenceMRT() -- MRT usually loads first
+
+    elseif event == "ADDON_LOADED" and a1 == "MRT" then
+        SilenceMRT()
 
     elseif event == "READY_CHECK" then
         -- a1 = name of the player who started it
         local ok, short = pcall(Ambiguate, a1 or "", "short")
         rcStarter = ok and short or nil
+        local okKey, key = pcall(Ambiguate, a1 or "", "none")
+        rcStarterKey = okKey and key or nil
         rcByMe = rcByButton or IsMe(a1)
         rcByButton = false
         rcAnnounced = false
         wipe(rcReady)
         wipe(durability)
+        wipe(srtUsers)
+        srtUsers[UnitName("player")] = true
         SendDurability() -- always reply, so whoever announces has our data
-        local okWell, errWell = pcall(CheckSoulwell)
-        if not okWell then Print("Soulwell check error: " .. tostring(errWell)) end
+        SilenceMRT()
+        local byMe = rcByMe
+        C_Timer.After(1.5, function() AfterReadyCheckStart(byMe) end)
         Debug("READY_CHECK by", a1, "byMe=", rcByMe)
 
     elseif event == "READY_CHECK_CONFIRM" then
@@ -734,7 +800,10 @@ ev:SetScript("OnEvent", function(_, event, ...)
         if a1 == PREFIX and a2:sub(1, 4) == "DUR:" then
             local pct = tonumber(a2:sub(5))
             local ok, key = pcall(Ambiguate, a4 or "", "none")
-            if pct and ok and key then durability[key] = pct end
+            if pct and ok and key then
+                durability[key] = pct
+                srtUsers[key] = true
+            end
             Debug("durability", a4, pct)
         elseif a1 == PREFIX and a2:sub(1, 5) == "NOTE^" then
             if SRT.OnNoteMessage then SRT:OnNoteMessage(a2, a4) end
