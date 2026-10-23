@@ -1,0 +1,20 @@
+## Interface: 120001
+## Title: Spilled Raid Tools
+## Notes: Markers, ready check (durability, Soulwell), pull & break timers, buff & gear check, guild invite, promote, group sort, tank marks, raid note.
+## Author: P0dlyanich
+## Version: 1.6.0
+## SavedVariables: SpilledRaidToolsDB
+## AddonCompartmentFunc: SpilledRaidTools_OnAddonCompartmentClick
+## X-License: MIT
+## X-Website: https://github.com/Vladyslav-Sharapov/Spilled-Raid-Tools
+## IconTexture: Interface\TargetingFrame\UI-RaidTargetingIcon_8
+
+Core.lua
+Options.lua
+Buffs.lua
+Gear.lua
+Roster.lua
+Note.lua
+Reminders.lua
+Minimap.lua
+Window.lua

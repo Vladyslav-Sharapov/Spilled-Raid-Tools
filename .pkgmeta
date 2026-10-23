@@ -1,0 +1,6 @@
+# BigWigs packager (CurseForge / Wago releases). The zip folder must match the .toc name.
+package-as: SpilledRaidTools
+
+ignore:
+  - .gitignore
+  - .pkgmeta
