@@ -37,6 +37,8 @@ function SRT:InitOptions()
         Slider("breakMinutes", "Break timer", "Default break length (sent to BigWigs / DBM).", 1, 30, 1, "%d min")
         Check("announceBreak", "Break in raid warning", "Announce break start and end in raid warning.")
         Check("announceReady", "Ready check result", "Announce 'Everyone is ready!' or who is not ready.")
+        Check("postWithoutLead", "Post without lead / assist",
+            "Off: without lead or assist you never post automatic messages or check results to chat.")
         Check("announceOthers", "Also announce for other players",
             "Announce pulls, breaks and ready checks started by other players too.\n" ..
             "Players who also use this addon announce their own, so nothing is posted twice.")

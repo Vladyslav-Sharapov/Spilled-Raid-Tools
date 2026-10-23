@@ -35,6 +35,13 @@ Then restart WoW or type `/reload`.
 
 Durability is only known for players who have this addon or MRT (it uses LibDurability's messages).
 
+## Who posts
+
+By default only the **raid leader and assists** (in a party: the leader) post automatic messages:
+pulls / breaks / ready checks started by others, ready check results, durability, Soulwell and buffs.
+Everyone else sees buff and gear check results only in their own chat. Turn on
+**Post without lead / assist** (Settings > General) when you need it without assist.
+
 ## Ready check: one announcer
 
 When a ready check starts, the buff check runs automatically (option) and the results

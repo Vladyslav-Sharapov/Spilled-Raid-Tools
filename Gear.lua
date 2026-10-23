@@ -118,7 +118,7 @@ local function Report()
 
     local ch = GroupChannel()
     for _, line in ipairs(lines) do
-        if ch and SRT.db.buffReportToChat then SendChat(line, ch) else Print(line) end
+        if ch and SRT.db.buffReportToChat and SRT.MayPost() then SendChat(line, ch) else Print(line) end
     end
     if #skipped > 0 then
         Print("Gear not checked (offline, too far or no answer): " .. table.concat(skipped, ", "))

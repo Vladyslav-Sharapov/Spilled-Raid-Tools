@@ -128,6 +128,10 @@ local function BuildGeneral(panel)
     l:Stepper("pullCountFrom", "Count every second from", "Raid-warn each second from this number down (0 = only start and PULL).", 0, 10, 1, "%d")
     l:Stepper("breakMinutes", "Break timer", "Default break length (sent to BigWigs / DBM).", 1, 30, 1, "%d min")
     l:Check("announceBreak", "Break in raid warning", "Announce break start and end in raid warning.")
+    l:Check("postWithoutLead", "Post without lead / assist",
+        "Off (default): without raid lead or assist (party: leader) you never post automatic messages - " ..
+        "pulls / breaks / ready checks of others, check results, buff and gear reports only show for you. " ..
+        "Turn on when you need it without assist.")
     l:Check("announceOthers", "Also announce for other players",
         "Announce pulls, breaks and ready checks started by other players too. " ..
         "Players who also use this addon announce their own, so nothing is posted twice.")

@@ -159,7 +159,7 @@ function SRT:BuffCheck()
     -- output
     local ch = GroupChannel()
     for _, line in ipairs(lines) do
-        if ch and self.db.buffReportToChat then
+        if ch and self.db.buffReportToChat and SRT.MayPost() then
             SendChat(line, ch)
         else
             Print(line)

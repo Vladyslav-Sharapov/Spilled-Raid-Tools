@@ -12,6 +12,7 @@ SRT.defaults = {
     announceBreak    = true,  -- announce break start / end in raid warning
     announceReady    = true,  -- announce ready check result
     announceOthers   = true,  -- also announce pulls / breaks / ready checks started by other players
+    postWithoutLead  = false, -- also post automatic announcements / check results without lead or assist
     buffReportToChat = true,  -- post buff check in group chat (false = only you see it)
     checkVantus      = true,  -- buff check also lists players without a vantus rune
     expireWarnMinutes = 5,    -- buff check warns when food / flask has less than this left (0 = off)
@@ -84,6 +85,13 @@ SRT.GroupChannel = GroupChannel
 local function CanLead()
     return UnitIsGroupLeader("player") or UnitIsGroupAssistant("player")
 end
+
+-- May I post automatic messages? Leader / assist (party: leader) always,
+-- everyone else only with the "postWithoutLead" option.
+local function MayPost()
+    return CanLead() or (db and db.postWithoutLead) or false
+end
+SRT.MayPost = MayPost
 
 -- Raid warning when allowed (raid: leader/assist, party: leader),
 -- otherwise normal group chat, otherwise only print to yourself.
@@ -182,7 +190,7 @@ end
 local function OnCountdownStarted(timeRemaining)
     if GetTime() - myPullAt < 1 then return end -- that was my own pull
     otherPullAt = GetTime()
-    if not (db.announcePull and db.announceOthers) then return end
+    if not (db.announcePull and db.announceOthers and MayPost()) then return end
     -- wait a moment: if the starter also has this addon, they announce it themselves
     C_Timer.After(0.5, function()
         if Recent("PULL", 3) then Debug("pull announced by another SRT user") return end
@@ -280,7 +288,7 @@ end
 -- Break timer started / cancelled by another player (BigWigs message)
 local function OnBreakFromOther(sec)
     C_Timer.After(0.5, function()
-        local announce = db.announceBreak and db.announceOthers and not Recent("BREAK", 3)
+        local announce = db.announceBreak and db.announceOthers and MayPost() and not Recent("BREAK", 3)
         if sec <= 0 then
             if breakEnds and announce then Announce("Break cancelled :/") end
             StopBreakDisplay()
@@ -298,6 +306,7 @@ local rcByMe, rcByButton, rcAnnounced = false, false, false
 local rcStarter            -- short name of whoever started the ready check
 local rcStarterKey         -- same, as "Name" or "Name-Realm"
 local srtUsers = {}        -- [name] = true: players running this addon (they send "DUR:" on ready check)
+local srtPosters = {}      -- [name] = true: addon users allowed to post (they also send "ANN")
 
 local function GroupRankOf(unit)
     local ok, r = pcall(function()
@@ -314,12 +323,12 @@ end
 -- same answer from the "DUR:" replies, so nothing is posted twice.
 local function IAmAnnouncer(byMe)
     if byMe then return true end
-    if not db.announceOthers then return false end
+    if not db.announceOthers or not MayPost() then return false end
     if Recent("RC", 40) then return false end                      -- starter pressed our Ready button
     if rcStarterKey and srtUsers[rcStarterKey] then return false end -- starter has the addon
     local me = UnitName("player")
     local best, bestRank
-    for name in pairs(srtUsers) do
+    for name in pairs(srtPosters) do
         local r = GroupRankOf(name == me and "player" or name)
         if not best or r > bestRank or (r == bestRank and name < best) then
             best, bestRank = name, r
@@ -764,8 +773,13 @@ ev:SetScript("OnEvent", function(_, event, ...)
         wipe(rcReady)
         wipe(durability)
         wipe(srtUsers)
+        wipe(srtPosters)
         srtUsers[UnitName("player")] = true
         SendDurability() -- always reply, so whoever announces has our data
+        if MayPost() then
+            srtPosters[UnitName("player")] = true
+            SendSRT("ANN") -- "I may post": only these players take part in picking the announcer
+        end
         SilenceMRT()
         local byMe = rcByMe
         C_Timer.After(1.5, function() AfterReadyCheckStart(byMe) end)
@@ -805,6 +819,12 @@ ev:SetScript("OnEvent", function(_, event, ...)
                 srtUsers[key] = true
             end
             Debug("durability", a4, pct)
+        elseif a1 == PREFIX and a2 == "ANN" then
+            local ok, key = pcall(Ambiguate, a4 or "", "none")
+            if ok and key then
+                srtUsers[key] = true
+                srtPosters[key] = true
+            end
         elseif a1 == PREFIX and a2:sub(1, 5) == "NOTE^" then
             if SRT.OnNoteMessage then SRT:OnNoteMessage(a2, a4) end
         elseif a1 == PREFIX then
