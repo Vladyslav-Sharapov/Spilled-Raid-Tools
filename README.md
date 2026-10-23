@@ -61,10 +61,9 @@ MRT has its own "food / flask report on ready check". The option **Keep MRT's re
 (on by default) switches it off on your client so buffs are only posted once. Other players' MRT
 can't be changed by an addon - ask them to turn that MRT option off if it is on.
 
-Marker buttons show what is in use: markers that are placed (ground) or on a unit (target) are lit
-with a glow, free ones are dimmed. Target marks are found on your target, focus, group members,
-their targets and nameplates. If the game hides a mark (Midnight secret values), the free ones
-are not dimmed, so you never see wrong info.
+Marker buttons show what is in use: free markers are bright, markers in use fade to grey.
+This works for ground markers. Midnight hides raid marks on units from addons, so the target row
+usually can't tell and stays bright.
 
 ## Groups board
 

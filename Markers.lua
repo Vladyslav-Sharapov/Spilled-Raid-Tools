@@ -1,26 +1,18 @@
--- Spilled Raid Tools - Show which ground / target markers are in use on the marker buttons
+-- Spilled Raid Tools - Marker buttons: free markers bright, markers in use faded.
+-- Midnight hides raid marks on units from addons (secret values), so the target
+-- row usually stays bright; placed ground markers can still be read.
 local ADDON, ns = ...
 local SRT = ns.SRT
 
 local ticker
 
--- used = lit with a glow, free = dimmed, unknown = normal (no info)
+-- free (and unknown) = bright, used = faded grey
 local function Show(b, state)
     local tex = b:GetNormalTexture()
-    if not tex or not b.inUse then return end
-    if state == "used" then
-        tex:SetDesaturated(false)
-        tex:SetAlpha(1)
-        b.inUse:Show()
-    elseif state == "free" then
-        tex:SetDesaturated(true)
-        tex:SetAlpha(0.45)
-        b.inUse:Hide()
-    else
-        tex:SetDesaturated(false)
-        tex:SetAlpha(1)
-        b.inUse:Hide()
-    end
+    if not tex then return end
+    local used = state == "used"
+    tex:SetDesaturated(used)
+    tex:SetAlpha(used and 0.3 or 1)
 end
 
 -- Midnight can hide values from addons ("secret"): then we don't know
@@ -77,19 +69,7 @@ local function Update()
     pcall(UpdateTargets)
 end
 
-local function AddGlow(b)
-    local g = b:CreateTexture(nil, "OVERLAY")
-    g:SetTexture("Interface\\Buttons\\CheckButtonHilight")
-    g:SetBlendMode("ADD")
-    g:SetPoint("TOPLEFT", -3, 3)
-    g:SetPoint("BOTTOMRIGHT", 3, -3)
-    g:Hide()
-    b.inUse = g
-end
-
 function SRT:InitMarkerStatus()
-    for _, b in pairs(self.wmButtons or {}) do AddGlow(b) end
-    for _, b in pairs(self.tmButtons or {}) do AddGlow(b) end
     -- world markers have no event, so a light ticker covers both rows
     if not ticker then ticker = C_Timer.NewTicker(0.5, Update) end
     Update()
