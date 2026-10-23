@@ -35,6 +35,13 @@ Then restart WoW or type `/reload`.
 
 Durability is only known for players who have this addon or MRT (it uses LibDurability's messages).
 
+## Ready check window
+
+On every ready check a window opens (like MRT's) with one line per player: ready status,
+food and flask (with minutes left), vantus rune, missing raid buffs (hover for names) and durability.
+It updates live and closes 5 seconds after the ready check ends. Right-click **Ready**
+(or `/srt rcw`) opens it any time. Settings > Checks: turn it off, or show it only as lead / assist.
+
 ## Who posts
 
 By default only the **raid leader and assists** (in a party: the leader) post automatic messages:

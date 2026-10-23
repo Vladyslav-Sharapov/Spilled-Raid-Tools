@@ -50,7 +50,7 @@ local function TimeLeft(a)
 end
 
 -- Returns { food = bool, flask = bool, vantus = bool, buffs = { [buffName] = true },
---           foodLeft = sec, flaskLeft = sec }
+--           foodLeft = sec, flaskLeft = sec, foodIcon, flaskIcon, vantusIcon }
 local function ScanUnit(unit, wanted)
     local r = { food = false, flask = false, vantus = false, buffs = {}, foodLeft = 0, flaskLeft = 0 }
     local vantus = VantusPrefix()
@@ -62,18 +62,42 @@ local function ScanUnit(unit, wanted)
             if a.icon == FOOD_ICON or name == FOOD_NAME then
                 r.food = true
                 r.foodLeft = math.max(r.foodLeft, TimeLeft(a))
+                r.foodIcon = a.icon
             end
             for _, w in ipairs(FLASK_WORDS) do
                 if name:find(w, 1, true) then
                     r.flask = true
                     r.flaskLeft = math.max(r.flaskLeft, TimeLeft(a))
+                    r.flaskIcon = a.icon
                 end
             end
-            if name:sub(1, #vantus) == vantus then r.vantus = true end
+            if name:sub(1, #vantus) == vantus then r.vantus, r.vantusIcon = true, a.icon end
             if wanted[name] then r.buffs[name] = true end
         end
     end
     return r
+end
+
+SRT.ScanUnitBuffs = ScanUnit
+
+-- Which raid buffs can this group provide? Returns wanted = { [name] = true }, order = { names }
+function SRT:WantedRaidBuffs(units)
+    local classes = {}
+    for _, u in ipairs(units) do
+        if UnitExists(u) then
+            local _, class = UnitClass(u)
+            if class then classes[class] = true end
+        end
+    end
+    local wanted, order = {}, {}
+    for _, b in ipairs(RAID_BUFFS) do
+        local name = classes[b.class] and C_Spell.GetSpellName(b.spell)
+        if name and not wanted[name] then
+            wanted[name] = true
+            order[#order + 1] = name
+        end
+    end
+    return wanted, order
 end
 
 local function NameList(list, max)
@@ -89,23 +113,9 @@ function SRT:BuffCheck()
 
     local units = GroupUnits()
 
-    -- which raid buffs can this group provide?
-    local classes = {}
-    for _, u in ipairs(units) do
-        if UnitExists(u) then
-            local _, class = UnitClass(u)
-            if class then classes[class] = true end
-        end
-    end
-    local wanted, order, missing = {}, {}, {}
-    for _, b in ipairs(RAID_BUFFS) do
-        local name = classes[b.class] and C_Spell.GetSpellName(b.spell)
-        if name and not wanted[name] then
-            wanted[name] = true
-            order[#order + 1] = name
-            missing[name] = {}
-        end
-    end
+    local wanted, order = self:WantedRaidBuffs(units)
+    local missing = {}
+    for _, name in ipairs(order) do missing[name] = {} end
 
     -- scan everyone
     local noFood, noFlask, noVantus, expiring, skipped = {}, {}, {}, {}, {}

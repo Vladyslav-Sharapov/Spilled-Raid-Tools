@@ -19,6 +19,9 @@ SRT.defaults = {
     checkSoulwell    = true,  -- on ready check, ask warlocks for a Soulwell
     autoBuffCheck    = true,  -- on ready check, run the buff check automatically
     blockMRTReport   = true,  -- keep MRT's own "food / flask report on ready check" off
+    readyWindow      = true,  -- show the ready check window (players, buffs, durability)
+    readyWindowLeadOnly = false, -- only show it when I'm leader / assist
+    readyWindowHold  = 5,     -- keep it open this many seconds after the ready check ends
     inviteMaxRank    = 5,     -- Invite button: guild ranks 1..N (1 = Guild Master)
     promoteMaxRank   = 2,     -- Promote button: guild ranks 1..N get raid assist
     autoPromote      = false, -- promote those ranks automatically when they join
@@ -378,6 +381,16 @@ local function CheckReady(final)
     end
 end
 
+-- "ready" / "notready" / "waiting" for the ready check window
+function SRT:ReadyState(unit)
+    local guid = UnitGUID(unit)
+    if guid and rcReady[guid] ~= nil then return rcReady[guid] and "ready" or "notready" end
+    local ok, status = pcall(GetReadyCheckStatus, unit)
+    if ok and (status == "ready" or status == "notready") then return status end
+    if UnitName(unit) == rcStarter or (rcByMe and UnitIsUnit(unit, "player")) then return "ready" end
+    return "waiting"
+end
+
 -- Runs CheckReady but shows any error instead of failing silently
 local function SafeCheckReady(final)
     local ok, err = pcall(CheckReady, final)
@@ -406,6 +419,13 @@ end
 local function UnitKey(unit)
     local ok, name = pcall(GetUnitName, unit, true)
     return ok and name or nil
+end
+
+-- Durability % of a group member (nil = unknown: no addon / no MRT)
+function SRT:UnitDurability(unit)
+    if UnitIsUnit(unit, "player") then return MyDurability() end
+    local key = UnitKey(unit)
+    return key and durability[key]
 end
 
 local function SendDurability()
@@ -640,8 +660,9 @@ function SRT:BuildUI()
         end)
         return b
     end
-    local ready = ActionButton("Ready", 0, function() SRT:ReadyCheck() end)
-    Tooltip(ready, "Ready check", "Announces 'Everyone is ready!' or who is not ready")
+    local ready = ActionButton("Ready", 0, function() SRT:ReadyCheck() end, function() SRT:ToggleReadyWindow() end)
+    Tooltip(ready, "Ready check", "Left-click: start a ready check (announces who is not ready)",
+        "Right-click: show / hide the ready check window (buffs, durability)")
     self.pullBtn = ActionButton("Pull", 1, function() SRT:StartPull() end, function() SRT:CancelPull() end)
     Tooltip(self.pullBtn, "Pull timer", "Left-click: start (also raid warning)", "Right-click: cancel",
         "Change the default in options or /srt pull <sec>")
@@ -783,6 +804,7 @@ ev:SetScript("OnEvent", function(_, event, ...)
         SilenceMRT()
         local byMe = rcByMe
         C_Timer.After(1.5, function() AfterReadyCheckStart(byMe) end)
+        if SRT.ReadyWindowStart then pcall(SRT.ReadyWindowStart, SRT, a2) end
         Debug("READY_CHECK by", a1, "byMe=", rcByMe)
 
     elseif event == "READY_CHECK_CONFIRM" then
@@ -795,6 +817,7 @@ ev:SetScript("OnEvent", function(_, event, ...)
     elseif event == "READY_CHECK_FINISHED" then
         Debug("FINISHED")
         SafeCheckReady(true)
+        if SRT.ReadyWindowFinish then pcall(SRT.ReadyWindowFinish, SRT) end
         local byMe = rcByMe
         C_Timer.After(1, function() SafeCheckDurability(byMe) end) -- let late replies arrive
         rcByMe = false

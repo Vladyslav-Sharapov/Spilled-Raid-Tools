@@ -152,6 +152,9 @@ local function BuildChecks(panel)
     l:Check("checkSoulwell", "Soulwell reminder", "Ask warlocks for a Soulwell (skipped if one was put down in the last 10 min).")
     l:Check("autoBuffCheck", "Auto buff check", "Run the buff check when a ready check starts. " ..
         "Only one player posts it: the starter if they have this addon, otherwise the highest ranked addon user.")
+    l:Check("readyWindow", "Ready check window", "Show a window with everyone's ready status, food, flask, " ..
+        "vantus rune, raid buffs and durability during the ready check (Ready right-click opens it any time).")
+    l:Check("readyWindowLeadOnly", "  only when I'm lead / assist", "Show the ready check window only when you are leader or assist.")
     l:Check("blockMRTReport", "Keep MRT's ready check report off", "Turns off MRT's own food / flask chat report " ..
         "on ready check on your client, so the buffs are posted once. Other players' MRT can't be changed.")
     l:Header("Buff & gear check")
