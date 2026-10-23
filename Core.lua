@@ -615,6 +615,14 @@ function SRT:BuildUI()
     gear:SetScript("OnClick", function() SRT:OpenOptions() end)
     Tooltip(gear, "Settings", "Open the settings window (also groups board)")
 
+    local rcw = CreateFrame("Button", nil, f)
+    rcw:SetSize(16, 16)
+    rcw:SetPoint("RIGHT", gear, "LEFT", -4, 0)
+    rcw:SetNormalTexture("Interface\\RaidFrame\\ReadyCheck-Ready")
+    rcw:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square", "ADD")
+    rcw:SetScript("OnClick", function() SRT:ToggleReadyWindow() end)
+    Tooltip(rcw, "Ready check window", "Show / hide everyone's ready status, food, flask, vantus, buffs and durability")
+
     local clearIcon = "Interface\\Buttons\\UI-GroupLoot-Pass-Up"
 
     -- Row 1: world (ground) markers
@@ -623,6 +631,8 @@ function SRT:BuildUI()
     for col, icon in ipairs(COLUMN_ORDER) do
         local wm = ICON_TO_WM[icon]
         local b = MacroButton("SRT_WorldMarker" .. wm, f, ICON_PATH .. icon, "/wm " .. wm, "/cwm " .. wm)
+        self.wmButtons = self.wmButtons or {}
+        self.wmButtons[wm] = b
         b:SetPoint("TOPLEFT", PAD + LABEL_W + (col - 1) * (SIZE + GAP), y1)
         Tooltip(b, ICON_NAMES[icon] .. " (ground)", "Left-click: place, then click the ground", "Right-click: remove")
     end
@@ -635,6 +645,8 @@ function SRT:BuildUI()
     RowLabel(f, "Target", y2)
     for col, icon in ipairs(COLUMN_ORDER) do
         local b = MacroButton("SRT_TargetMarker" .. icon, f, ICON_PATH .. icon, "/tm " .. icon, "/tm 0")
+        self.tmButtons = self.tmButtons or {}
+        self.tmButtons[icon] = b
         b:SetPoint("TOPLEFT", PAD + LABEL_W + (col - 1) * (SIZE + GAP), y2)
         Tooltip(b, ICON_NAMES[icon] .. " (target)", "Left-click: mark your target", "Right-click: clear target's mark")
     end
@@ -777,6 +789,7 @@ ev:SetScript("OnEvent", function(_, event, ...)
         if SRT.InitNote then SRT:InitNote() end
         if SRT.InitReminders then SRT:InitReminders() end
         if SRT.InitMinimap then SRT:InitMinimap() end
+        if SRT.InitMarkerStatus then SRT:InitMarkerStatus() end
         SilenceMRT() -- MRT usually loads first
 
     elseif event == "ADDON_LOADED" and a1 == "MRT" then

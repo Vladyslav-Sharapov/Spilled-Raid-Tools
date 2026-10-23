@@ -31,7 +31,8 @@ Then restart WoW or type `/reload`.
 | Sort | Left: sort groups in your order (default tanks, healers, melee, ranged). Right: groups board. |
 | Mark tanks | Left: first tank Square, second tank Circle (changeable). Right: clear. |
 | Raid note | Left: show / hide the note. Right: edit and send it. |
-| Gear icon | Settings window (General, Checks, Roster, Groups, Note). |
+| Gear icon | Settings window (General, Checks, Roster, Groups, Note, Reminders). |
+| Ready check icon | Next to the gear: show / hide the ready check window. |
 
 Durability is only known for players who have this addon or MRT (it uses LibDurability's messages).
 
@@ -59,6 +60,11 @@ alphabetical). Every copy of the addon works out the same answer, so nothing is 
 MRT has its own "food / flask report on ready check". The option **Keep MRT's ready check report off**
 (on by default) switches it off on your client so buffs are only posted once. Other players' MRT
 can't be changed by an addon - ask them to turn that MRT option off if it is on.
+
+Marker buttons show what is in use: markers that are placed (ground) or on a unit (target) are lit
+with a glow, free ones are dimmed. Target marks are found on your target, focus, group members,
+their targets and nameplates. If the game hides a mark (Midnight secret values), the free ones
+are not dimmed, so you never see wrong info.
 
 ## Groups board
 
